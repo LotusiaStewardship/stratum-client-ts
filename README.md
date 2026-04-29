@@ -64,7 +64,36 @@ const accepted = await client.submitNativeShare({
 console.log('share accepted?', accepted)
 ```
 
-## Browser compatibility
+## Transport support
+
+### lotusd server transport review
+
+`lotusd/src/stratum/` exposes Stratum v1 over raw TCP listeners with newline-delimited JSON framing. The in-node Stratum server does not expose native WebSocket transport.
+
+### Implemented transports
+
+- `WebSocketStratumTransport` (browser-compatible, requires ws bridge/proxy)
+- `NodeTcpStratumTransport` via `stratum-client-ts/node` (direct TCP to lotusd)
+
+### Node.js direct TCP example
+
+```ts
+import { StratumClient } from 'stratum-client-ts'
+import { NodeTcpStratumTransport } from 'stratum-client-ts/node'
+
+const transport = new NodeTcpStratumTransport('127.0.0.1', 3334)
+const client = new StratumClient(transport)
+
+await client.connect()
+await client.subscribe('node-miner/1.0')
+await client.authorize('lotus_address.worker1', 'x')
+```
+
+### Methodology
+
+Transport expansion methodology is documented in `docs/transports.md`.
+
+### Browser compatibility
 
 Browsers cannot open raw TCP sockets, so production deployments should expose Stratum over a WebSocket bridge/proxy. The client is transport-abstracted and ships with a `WebSocketStratumTransport` implementation suitable for browser runtime.
 

@@ -7,7 +7,7 @@ const DIST_DIR = 'dist'
 const ESM_DIR = path.join(DIST_DIR, 'esm')
 const CJS_DIR = path.join(DIST_DIR, 'cjs')
 const TYPES_DIR = path.join(DIST_DIR, 'types')
-const SOURCE_GLOBS = ['index.ts', 'lib/**/*.ts']
+const SOURCE_GLOBS = ['index.ts', 'node.ts', 'lib/**/*.ts']
 
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
