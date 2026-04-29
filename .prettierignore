@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.js
+*.d.ts
+*.js.map
+coverage/
+.vscode/
+.idea/
+.DS_Store
+.env
+.env.local
+.env.*.local
