@@ -6,6 +6,7 @@ import {
   doubleSha256,
   hexToBytes,
   tripleSha256,
+  validateSubmitShape,
 } from '../lib/mining/native.js'
 
 /**
@@ -31,11 +32,14 @@ describe('native mining utils', () => {
       coinbase1: 'aa',
       coinbase2: 'bb',
       merkleBranches: [],
-      layer3Hash: '00'.repeat(32),
+      version: '20000000',
       nbits: 'ffff001d',
       ntime: '010203040506',
-      reserved: '00000000',
       cleanJobs: true,
+      blockHeight: 1000,
+      epochHashHex: 'epoch_hash_hex',
+      extendedMetadataHashHex: 'ext_meta_hash',
+      blockSize: 8192,
     }
 
     const coinbase = buildCoinbase(notify, '01020304', 'aabbccdd')
@@ -49,5 +53,35 @@ describe('native mining utils', () => {
     const t1 = difficultyToTarget(1)
     const t2 = difficultyToTarget(2)
     expect(t2 < t1).toBe(true)
+  })
+
+  describe('validateSubmitShape', () => {
+    const valid = {
+      workerName: 'addr.rig',
+      jobId: 'j1',
+      extranonce2: 'aabbccdd',
+      ntime: '010203040506',
+      nonce: '0011223344556677',
+    }
+
+    it('accepts valid params', () => {
+      expect(validateSubmitShape(valid, 4)).toBeUndefined()
+    })
+
+    it('rejects wrong extranonce2 length', () => {
+      expect(validateSubmitShape({ ...valid, extranonce2: 'aabb' }, 4)).toMatchObject({ field: 'extranonce2' })
+    })
+
+    it('rejects wrong ntime length', () => {
+      expect(validateSubmitShape({ ...valid, ntime: '0102' }, 4)).toMatchObject({ field: 'ntime' })
+    })
+
+    it('rejects wrong nonce length', () => {
+      expect(validateSubmitShape({ ...valid, nonce: '0102' }, 4)).toMatchObject({ field: 'nonce' })
+    })
+
+    it('rejects non-hex', () => {
+      expect(validateSubmitShape({ ...valid, nonce: 'zzzzzzzzzzzzzzzz' }, 4)).toMatchObject({ field: 'nonce' })
+    })
   })
 })

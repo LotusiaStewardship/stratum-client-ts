@@ -1,5 +1,5 @@
 import { sha256 } from '@noble/hashes/sha2'
-import type { NativeNotifyParams } from '../protocol/types.js'
+import type { NativeNotifyParams, NativeSubmitParams } from '../protocol/types.js'
 
 /**
  * Decode a hex string into bytes.
@@ -72,6 +72,57 @@ export function computeMerkleRoot(
     current = doubleSha256(concatBytes([current, hexToBytes(branch)]))
   }
   return current
+}
+
+const HEX_RE = /^[0-9a-fA-F]+$/
+
+export interface SubmitShapeError {
+  field: 'extranonce2' | 'ntime' | 'nonce'
+  expectedLen: number
+  actualLen: number
+  message: string
+}
+
+/**
+ * Validate submit field lengths against the server's pre-validation rules.
+ *
+ * Returns undefined when valid, or a descriptive error object.
+ *
+ * Server rules (from prevalidate_submit_shape):
+ *   - extranonce2: extranonce2Size * 2 hex chars
+ *   - ntime: 12 hex chars (6 bytes)
+ *   - nonce: 16 hex chars (8 bytes)
+ */
+export function validateSubmitShape(
+  params: NativeSubmitParams,
+  extranonce2Size: number,
+): SubmitShapeError | undefined {
+  const expectedExtranonce2Len = extranonce2Size * 2
+  if (params.extranonce2.length !== expectedExtranonce2Len || !HEX_RE.test(params.extranonce2)) {
+    return {
+      field: 'extranonce2',
+      expectedLen: expectedExtranonce2Len,
+      actualLen: params.extranonce2.length,
+      message: `extranonce2 must be ${expectedExtranonce2Len} hex chars`,
+    }
+  }
+  if (params.ntime.length !== 12 || !HEX_RE.test(params.ntime)) {
+    return {
+      field: 'ntime',
+      expectedLen: 12,
+      actualLen: params.ntime.length,
+      message: 'ntime must be 12 hex chars',
+    }
+  }
+  if (params.nonce.length !== 16 || !HEX_RE.test(params.nonce)) {
+    return {
+      field: 'nonce',
+      expectedLen: 16,
+      actualLen: params.nonce.length,
+      message: 'nonce must be 16 hex chars',
+    }
+  }
+  return undefined
 }
 
 /**

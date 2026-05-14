@@ -1,6 +1,7 @@
 import type {
   NativeNotifyParams,
   NativeSubmitParams,
+  SetExtranonceParams,
   StratumMessage,
   StratumNotification,
   StratumRequest,
@@ -14,7 +15,7 @@ import type {
  * This mirrors lotusd's defensive parsing constraints so client-side
  * buffering behaves similarly under malformed or malicious input.
  */
-export const MAX_LINE_LENGTH = 16_384
+export const MAX_LINE_LENGTH = 8_192
 
 /**
  * Stateful helper for incrementally parsing newline-delimited Stratum frames.
@@ -186,20 +187,56 @@ export function decodeSubscribeResult(payload: unknown): SubscribeResult {
 
 /**
  * Decode Lotus native `mining.notify` params array into a named object.
+ *
+ * Server sends 13 positional fields:
+ *   [jobId, prevHash, coinbase1, coinbase2, merkleBranches,
+ *    version, nbits, ntime, cleanJobs,
+ *    blockHeight, epochHashHex, extendedMetadataHashHex, blockSize]
  */
 export function decodeNativeNotify(params: unknown): NativeNotifyParams {
   const arr = params as unknown[]
   return {
-    jobId: String(arr[0]),
-    prevHash: String(arr[1]),
-    coinbase1: String(arr[2]),
-    coinbase2: String(arr[3]),
+    jobId: safeStr(arr[0]),
+    prevHash: safeStr(arr[1]),
+    coinbase1: safeStr(arr[2]),
+    coinbase2: safeStr(arr[3]),
     merkleBranches: (arr[4] as string[]) ?? [],
-    layer3Hash: String(arr[5]),
-    nbits: String(arr[6]),
-    ntime: String(arr[7]),
-    reserved: String(arr[8]),
-    cleanJobs: Boolean(arr[9]),
+    version: safeStr(arr[5]),
+    nbits: safeStr(arr[6]),
+    ntime: safeStr(arr[7]),
+    cleanJobs: Boolean(arr[8]),
+    blockHeight: safeNum(arr[9]),
+    epochHashHex: safeStr(arr[10]),
+    extendedMetadataHashHex: safeStr(arr[11]),
+    blockSize: safeNum(arr[12]),
+  }
+}
+
+/** Coerce to string safely (handles undefined/null/number/boolean). */
+function safeStr(v: unknown): string {
+  return v == null ? '' : String(v)
+}
+
+/** Coerce to number safely (handles undefined/null/string). */
+function safeNum(v: unknown): number {
+  if (typeof v === 'number') return v
+  if (typeof v === 'string') {
+    const n = Number(v)
+    return Number.isFinite(n) ? n : 0
+  }
+  return 0
+}
+
+/**
+ * Decode `mining.set_extranonce` params into named fields.
+ *
+ * Server sends: [extranonce1_hex, extranonce2_size_bytes]
+ */
+export function decodeSetExtranonce(params: unknown): SetExtranonceParams {
+  const arr = params as [string, number]
+  return {
+    extranonce1: arr[0],
+    extranonce2Size: arr[1],
   }
 }
 

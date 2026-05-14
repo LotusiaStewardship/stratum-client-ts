@@ -73,8 +73,10 @@ export interface SubscribeResult {
 /**
  * Lotus native `mining.notify` payload decoded into named fields.
  *
- * This models the 10-element Lotus notify shape used for native (non-AuxPow)
- * mining jobs.
+ * Maps the 13-element positional array emitted by stratum-server-nng:
+ *   [jobId, prevHash, coinbase1, coinbase2, merkleBranches,
+ *    version, nbits, ntime, cleanJobs,
+ *    blockHeight, epochHashHex, extendedMetadataHashHex, blockSize]
  */
 export interface NativeNotifyParams {
   /** Hex job id string. */
@@ -87,16 +89,34 @@ export interface NativeNotifyParams {
   coinbase2: string
   /** Merkle branch list as hex hashes. */
   merkleBranches: string[]
-  /** Lotus-specific precomputed layer3 hash. */
-  layer3Hash: string
+  /** Block version string (hex, e.g. "20000000"). */
+  version: string
   /** Compact target bits (hex, 4 bytes). */
   nbits: string
-  /** Lotus block time field (hex, 6 bytes / 12 chars). */
+  /** Lotus block time field (hex, 12 hex chars / 6 bytes). */
   ntime: string
-  /** Reserved field (hex, 4 bytes). */
-  reserved: string
   /** True when miners must discard old jobs. */
   cleanJobs: boolean
+  /** Block height being mined. */
+  blockHeight: number
+  /** Lotus epoch hash (hex). */
+  epochHashHex: string
+  /** Lotus extended metadata hash (hex). */
+  extendedMetadataHashHex: string
+  /** Total candidate block size in bytes. */
+  blockSize: number
+}
+
+/**
+ * Params for `mining.set_extranonce` notification.
+ *
+ * [extranonce1_hex, extranonce2_size_bytes]
+ */
+export interface SetExtranonceParams {
+  /** Session-unique extranonce1 in hex. */
+  extranonce1: string
+  /** Required extranonce2 width in bytes. */
+  extranonce2Size: number
 }
 
 /**
